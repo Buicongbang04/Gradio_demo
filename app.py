@@ -2,8 +2,11 @@ import gradio as gr
 import warnings
 warnings.filterwarnings("ignore")
 import os
+from dotenv import load_dotenv
 from huggingface_hub import InferenceClient
 from functools import partial
+
+load_dotenv()
 
 system_prompt = "You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, but do not make up answers. If you don't know the answer, just say that you don't know. Do not try to make up an answer."
 
@@ -12,6 +15,7 @@ def inference(prompt, hf_token, model, model_name):
                  "content" : system_prompt},
                  {"role": "user",
                   "content" : prompt}]
+    
     if hf_token is None or not hf_token.strip():
         hf_token = os.getenv("HF_TOKEN")
     
@@ -41,7 +45,7 @@ with gr.Blocks() as demo:
 
     with gr.Row() as output_row:
         llama_output = gr.Markdown("LLaMA 3-70B Instruct")
-        noust_output = gr.Markdown("Nous-Hermes 2 Mixtral 8x7B DPO")
+        nous_output = gr.Markdown("Nous-Hermes 2 Mixtral 8x7B DPO")
         zephyr_output = gr.Markdown("Zephyr ORPO 141B A35B")
 
     # prompt.submit(
@@ -66,11 +70,30 @@ with gr.Blocks() as demo:
     gr.on(
         triggers=[prompt.submit, generate_btn.click],
         fn=partial(inference,
-                   model="meta-llama/Meta-Llama-3-70b-Instruct",
-                   model_name="LLaMA 3-70B Instruct"),
+                   model="meta-llama/Meta-Llama-Guard-2-8B",
+                   model_name="Meta Llama Guard 2 8B"),
         inputs=[prompt, token],
         outputs=[llama_output],
         show_progress="hidden",
     )
 
+    gr.on(
+        triggers=[prompt.submit, generate_btn.click],
+        fn=partial(inference,
+                   model="NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO",
+                   model_name="Nous-Hermes 2 Mixtral 8x7B DPO"),
+        inputs=[prompt, token],
+        outputs=[nous_output],
+        show_progress="hidden",
+    )
+
+    gr.on(
+        triggers=[prompt.submit, generate_btn.click],
+        fn=partial(inference,
+                   model="HuggingFaceH4/zephyr-orpo-141b-A35b-v0.1",
+                   model_name="Zephyr ORPO 141B A35B"),
+        inputs=[prompt, token],
+        outputs=[zephyr_output],
+        show_progress="hidden",
+    )
 demo.launch()
